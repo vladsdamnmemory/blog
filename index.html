@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+      
+<ul>
+<li><a href="#пользовательские-web-компоненты">Пользовательские web компоненты</a>
+<ul>
+<li><a href="#создание-своего-класса-с-наследованием-свойств-и-методов-htmlelement">Создание своего класса с наследованием свойств и методов HTMLElement</a></li>
+<li><a href="#создание-содержимого-компонента-с-помощью-метода-connectedcallback">Создание содержимого компонента с помощью метода connectedCallback</a></li>
+<li><a href="#использование">Использование</a></li>
+<li><a href="#полезные-ссылки-на-источники">Полезные ссылки на источники</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <p><em>dev: vladsdamnmemory</em><br>
+<a href="https://t.me/dev_vladsdamnmemory">Telegram channel</a> |  <a href="https://github.com/vladsdamnmemory">Github</a> |  <a href="https://www.npmjs.com/~suazdee">npm</a></p>
+<p><strong>Блог о web-разработке</strong></p>
+<h1 id="пользовательские-web-компоненты">Пользовательские web компоненты</h1>
+<p>Сегодня рассмотрим способ создания пользовательского компонента с инкапсулированными стилями. Прежде всего я сам лично  заинтересовался этой темой и решил разобраться в основах.</p>
+<p><em>Внимание: не все браузеры поддерживают реализацию пользовательских компонентов.</em></p>
+<p>Посмотрите на скрин ниже — заметите tag <code>&lt;user-card&gt;</code>.</p>
+<p><img src="https://www.dropbox.com/s/vr4xqa5yw9i1qiz/1.png?raw=1" alt="dev tool screen"></p>
+<p>Задача этого компонента — отрисовать карточку пользователя с аватаркой и кратким описанием.</p>
+<p>Приступим к написанию кода.</p>
+<p><em>Готовый код можно посмотреть <a href="https://jsfiddle.net/vladsdamnmemory/14abejz0/">здесь</a></em>.</p>
+<h2 id="создание-своего-класса-с-наследованием-свойств-и-методов-htmlelement">Создание своего класса с наследованием свойств и методов <code>HTMLElement</code></h2>
+<p>Давайте объявим класс <code>UserCard</code>. Затем обратимся к Shadow DOM.</p>
+<blockquote>
+<p>Теневой DOM («Shadow DOM») используется для инкапсуляции. Благодаря ему в компоненте есть собственное «теневое» DOM-дерево, к которому нельзя просто так обратиться из главного документа, у него могут быть изолированные CSS-правила и т.д.</p>
+</blockquote>
+<pre class=" language-javascript"><code class="prism  language-javascript"><span class="token comment">// Наследуем от HTMLElement  </span>
+<span class="token keyword">class</span> <span class="token class-name">UserCard</span> <span class="token keyword">extends</span> <span class="token class-name">HTMLElement</span> <span class="token punctuation">{</span>  
+  
+    <span class="token function">constructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>  
+        <span class="token keyword">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+        <span class="token comment">// Добавим тень  </span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">attachShadow</span><span class="token punctuation">(</span><span class="token punctuation">{</span>mode<span class="token punctuation">:</span> <span class="token string">'open'</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+<span class="token punctuation">}</span>  
+</code></pre>
+<blockquote>
+<p>Интерфейс ShadowRoot API Shadow DOM - это корневой узел поддерева DOM, который отображается отдельно от основного дерева DOM документа.</p>
+</blockquote>
+<p>С помощью <code>{mode: 'open'}</code> можно обращаться к содержимому теневого DOM компонента и вносить изменения.</p>
+<h2 id="создание-содержимого-компонента-с-помощью-метода-connectedcallback">Создание содержимого компонента с помощью метода <code>connectedCallback</code></h2>
+<p>Т.к. <code>UserCard</code> наследует методы от <code>HTMLElement</code>, то можно использовать это и добавить метод <code>connectedCallback</code>,<br>
+который срабатывает после создания экземпляра <code>UserCard</code>. Этот метод будет конструировать содержимое нашего компонента.</p>
+<pre class=" language-javascript"><code class="prism  language-javascript"><span class="token keyword">class</span> <span class="token class-name">UserCard</span> <span class="token keyword">extends</span> <span class="token class-name">HTMLElement</span> <span class="token punctuation">{</span>  
+  
+    <span class="token comment">// Сделаем чередующиеся цвета благодаря этому параметру  </span>
+    <span class="token keyword">static</span> even <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>  
+  
+    <span class="token function">constructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>  
+        <span class="token keyword">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">attachShadow</span><span class="token punctuation">(</span><span class="token punctuation">{</span>mode<span class="token punctuation">:</span> <span class="token string">'open'</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+  
+    <span class="token function">connectedCallback</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>  
+        <span class="token keyword">let</span> src<span class="token punctuation">,</span>  
+            bgColor<span class="token punctuation">;</span>  
+  
+        <span class="token keyword">const</span> <span class="token punctuation">{</span>shadowRoot<span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">;</span> <span class="token comment">// Извлечем ссылку на shadowRoot компонента  </span>
+  
+        bgColor <span class="token operator">=</span> UserCard<span class="token punctuation">.</span>even <span class="token operator">?</span> <span class="token string">"#ffe7d6"</span> <span class="token punctuation">:</span> <span class="token string">"#e6e6e6"</span><span class="token punctuation">;</span> <span class="token comment">// Выбор цвета в зависимости от четности  </span>
+  
+        UserCard<span class="token punctuation">.</span>even <span class="token operator">=</span> <span class="token operator">!</span>UserCard<span class="token punctuation">.</span>even<span class="token punctuation">;</span> <span class="token comment">// Изменяем значение UserCard.even  </span>
+  
+        <span class="token comment">// Если передана ссылка на изображение пользователя - отображать это изображение  </span>
+        <span class="token comment">// Иначе отображать изображение по умолчанию  </span>
+        src <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">hasAttribute</span><span class="token punctuation">(</span><span class="token string">'img'</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getAttribute</span><span class="token punctuation">(</span><span class="token string">'img'</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token string">"https://picsum.photos/id/237/200/200"</span><span class="token punctuation">;</span>  
+  
+        <span class="token comment">// Создадим эффектное появление элемента после того, как изображение будет подгружено  </span>
+        window<span class="token punctuation">.</span><span class="token function">addEventListener</span><span class="token punctuation">(</span><span class="token string">"load"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>  
+            <span class="token keyword">let</span> container<span class="token punctuation">;</span>  
+  
+            container <span class="token operator">=</span> shadowRoot<span class="token punctuation">.</span><span class="token function">querySelector</span><span class="token punctuation">(</span><span class="token string">".main-container"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+            container<span class="token punctuation">.</span>style<span class="token punctuation">.</span>opacity <span class="token operator">=</span> <span class="token string">"1"</span><span class="token punctuation">;</span>  
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+  
+        shadowRoot<span class="token punctuation">.</span>innerHTML <span class="token operator">=</span> <span class="token comment">/// Создаем структуру компонента  </span>
+    <span class="token punctuation">}</span>  
+<span class="token punctuation">}</span>  
+</code></pre>
+<p>В <code>shadowRoot.innerHTML</code> запишем следующее значение в обратных кавычках:</p>
+<pre class=" language-html"><code class="prism  language-html"><span class="token comment">&lt;!-- Здесь приватные стили компонента --&gt;</span>  
+  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>style</span><span class="token punctuation">&gt;</span></span><span class="token style language-css">  
+    <span class="token selector">* </span><span class="token punctuation">{</span>  
+        <span class="token property">box-sizing</span><span class="token punctuation">:</span> border-box<span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+  
+    <span class="token selector"><span class="token class">.main-container</span> </span><span class="token punctuation">{</span>  
+        <span class="token selector">opacity: 0;  
+        transition: visibility 0s, opacity 0<span class="token class">.25s</span> ease-in;  
+        display: flex;  
+        align-items: center;  
+        padding: 24px;  
+        width: 520px;  
+        border-radius: 4px;  
+        font-size: 16px;  
+        background: $</span><span class="token punctuation">{</span>bgColor<span class="token punctuation">}</span><span class="token punctuation">;</span>  
+        <span class="token property">color</span><span class="token punctuation">:</span> <span class="token hexcode">#2d2222</span><span class="token punctuation">;</span>  
+        <span class="token property">box-shadow</span><span class="token punctuation">:</span> <span class="token number">0</span> <span class="token number">0</span> <span class="token number">2</span>px <span class="token hexcode">#ffb3b3</span><span class="token punctuation">;</span>  
+        <span class="token property">font-family</span><span class="token punctuation">:</span> Helvetica, SansSerif, Tahoma, Helvetica, serif<span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+  
+    <span class="token selector">img </span><span class="token punctuation">{</span>  
+        <span class="token property">border-radius</span><span class="token punctuation">:</span> <span class="token number">50%</span><span class="token punctuation">;</span>  
+        <span class="token property">border</span><span class="token punctuation">:</span> <span class="token number">6</span>px <span class="token hexcode">#2d2222</span> solid<span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+  
+    <span class="token selector"><span class="token class">.description</span> </span><span class="token punctuation">{</span>  
+        <span class="token comment">/*text-align: center;*/</span>  
+    <span class="token punctuation">}</span>  
+  
+    <span class="token selector">p </span><span class="token punctuation">{</span>  
+        <span class="token comment">/* Влияет только на элементы, созданные в shadow dom */</span>  
+        <span class="token property">padding-left</span><span class="token punctuation">:</span> <span class="token number">12</span>px<span class="token punctuation">;</span>  
+    <span class="token punctuation">}</span>  
+</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>style</span><span class="token punctuation">&gt;</span></span>  
+  
+<span class="token comment">&lt;!-- Здесь внутренние элементы --&gt;</span>  
+  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>main-container<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>img-wrapper<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>img</span> <span class="token attr-name">src</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>${src}<span class="token punctuation">"</span></span> <span class="token attr-name">title</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>Avatar<span class="token punctuation">"</span></span> <span class="token attr-name">alt</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>No photo<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>  
+  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>description<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>slot</span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>slot</span><span class="token punctuation">&gt;</span></span>  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>  
+  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>  
+</code></pre>
+<p>Также нужно не забыть зарегистрировать компонент глобально:</p>
+<pre class=" language-js"><code class="prism  language-js"><span class="token comment">// Регистрация компонента  </span>
+customElements<span class="token punctuation">.</span><span class="token function">define</span><span class="token punctuation">(</span><span class="token string">'user-card'</span><span class="token punctuation">,</span> UserCard<span class="token punctuation">)</span><span class="token punctuation">;</span>  
+</code></pre>
+<h2 id="использование">Использование</h2>
+<p>Теперь компонент можно использовать как тэг<code>&lt;user-card&gt; любое содержимое &lt;/user-card&gt;</code> в HTML документе.</p>
+<p>Заметили tag <code>&lt;slot&gt;</code>? Это то место, куда вставляется контент (текст, картинки, другие блоки), которым мы обеспечиваем  наш компонент при его использовании. Например:</p>
+<pre class=" language-html"><code class="prism  language-html"><span class="token comment">&lt;!-- Атрибут img создан нами и используется для указания пути к картинке --&gt;</span>  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>user-card</span> <span class="token attr-name">img</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>https://picsum.photos/id/240/200/200<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span><span class="token punctuation">&gt;</span></span>Awesome picture<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">&gt;</span></span>  
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span><span class="token punctuation">&gt;</span></span>Over here the image source was provided<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">&gt;</span></span>  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>user-card</span><span class="token punctuation">&gt;</span></span>  
+</code></pre>
+<h2 id="полезные-ссылки-на-источники">Полезные ссылки на источники</h2>
+<ul>
+<li><a href="https://learn.javascript.ru/shadow-dom">Shadow DOM</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot">Shadow Root</a></li>
+<li><a href="https://web.dev/declarative-shadow-dom/">Declarative Shadow DOM</a>*</li>
+</ul>
+<hr>
+<blockquote>
+<p>Written with <a href="https://stackedit.io/">StackEdit</a>.</p>
+</blockquote>
+
+    </div>
+  </div>
+</body>
+
+</html>
